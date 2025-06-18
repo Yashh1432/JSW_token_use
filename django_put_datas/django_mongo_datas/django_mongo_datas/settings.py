@@ -13,11 +13,19 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+
+SECRET_KEY = 'django-insecure-o#2k#27d&*wkzmw%g7gb(z80osivgpl=_e==tty$dcbjhho7&z'
+ENCRYPTION_KEY = 'jxK8ZibstMnzRJt4J4sJU954nBvCuHOyC6jjRqLhSYk='
+
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
-ALLOWED_HOSTS = ['*']
+# ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
+# if not ENCRYPTION_KEY:
+#     raise ValueError("ENCRYPTION_KEY not set in .env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -79,16 +87,10 @@ DATABASES = {
 }
 WSGI_APPLICATION = 'django_mongo_datas.wsgi.application'
 
-ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'default-encryption-key')
-# Database
+ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', 'default-encryption-key')# Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+ALLOWED_HOSTS = ['*']
 
 
 # Password validation
