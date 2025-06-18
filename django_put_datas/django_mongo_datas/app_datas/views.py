@@ -54,6 +54,96 @@ def insert_data(request):
         return JsonResponse({'message': 'Data inserted', 'uuid': data['uuid']}, status=201)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+def update_data_patch(request):
+    if request.method == 'PATCH':
+        try:
+            data = json.loads(request.body)
+            uuid_param = data.get('uuid')
+            if not uuid_param:
+                return JsonResponse({'error': 'UUID required'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        # Check if document exists
+        try:
+            existing = data_collection.find_one({'uuid': uuid_param})
+            if not existing:
+                return JsonResponse({'error': 'Data not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': f'MongoDB fetch failed: {str(e)}'}, status=500)
+
+        # Prepare update data
+        update_data = {k: v for k, v in data.items() if k != 'uuid'}
+        update_data['updated_at'] = datetime.utcnow()
+
+        # Encrypt sensitive fields
+        for field in ENCRYPTED_FIELDS:
+            if field in update_data and update_data[field]:
+                try:
+                    update_data[field] = base64.b64encode(
+                        fernet.encrypt(update_data[field].encode())
+                    ).decode()
+                except:
+                    return JsonResponse({'error': f'Encryption failed for {field}'}, status=400)
+
+        # Update MongoDB (partial update)
+        try:
+            data_collection.update_one(
+                {'uuid': uuid_param},
+                {'$set': update_data}
+            )
+        except Exception as e:
+            return JsonResponse({'error': f'MongoDB update failed: {str(e)}'}, status=500)
+
+        return JsonResponse({'message': 'Data updated', 'uuid': uuid_param}, status=200)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def update_data_put(request):
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            uuid_param = data.get('uuid')
+            if not uuid_param:
+                return JsonResponse({'error': 'UUID required'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        # Check if document exists
+        try:
+            existing = data_collection.find_one({'uuid': uuid_param})
+            if not existing:
+                return JsonResponse({'error': 'Data not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': f'MongoDB fetch failed: {str(e)}'}, status=500)
+
+        # Prepare replacement data
+        replacement_data = {k: v for k, v in data.items() if k != 'uuid'}
+        replacement_data['uuid'] = uuid_param
+        replacement_data['created_at'] = existing.get('created_at', datetime.utcnow())
+        replacement_data['updated_at'] = datetime.utcnow()
+
+        # Encrypt sensitive fields
+        for field in ENCRYPTED_FIELDS:
+            if field in replacement_data and replacement_data[field]:
+                try:
+                    replacement_data[field] = base64.b64encode(
+                        fernet.encrypt(replacement_data[field].encode())
+                    ).decode()
+                except:
+                    return JsonResponse({'error': f'Encryption failed for {field}'}, status=400)
+
+        # Replace MongoDB document
+        try:
+            data_collection.replace_one(
+                {'uuid': uuid_param},
+                replacement_data
+            )
+        except Exception as e:
+            return JsonResponse({'error': f'MongoDB update failed: {str(e)}'}, status=500)
+
+        return JsonResponse({'message': 'Data replaced', 'uuid': uuid_param}, status=200)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 def fetch_data(request):
     if request.method == 'GET':
         uuid_param = request.GET.get('uuid')
