@@ -24,7 +24,6 @@ except Exception as e:
 # Fields to encrypt
 ENCRYPTED_FIELDS = ['name', 'email']
 
-@csrf_exempt
 def insert_data(request):
     if request.method == 'POST':
         try:
